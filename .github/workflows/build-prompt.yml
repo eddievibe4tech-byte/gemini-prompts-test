@@ -1,0 +1,41 @@
+name: Build & Deploy Master Prompt
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '00-system.md'
+      - 'few-shots/**'
+      - '99-framework.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Assemble Master Prompt
+        run: |
+          mkdir -p dist
+          # 依檔案序號嚴格組裝
+          cat 00-system.md \
+              few-shots/*.md \
+              99-framework.md > dist/master_prompt.txt
+
+      - name: Commit and Push Compiled Prompt
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/master_prompt.txt
+
+          if git diff --staged --quiet; then
+            echo "No changes detected in dist/master_prompt.txt"
+          else
+            git commit -m "chore(build): auto-assemble master_prompt [skip ci]"
+            git push
+          fi
